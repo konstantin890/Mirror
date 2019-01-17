@@ -476,7 +476,7 @@ namespace Mirror
 
             // original HLAPI had a warning in UNetUpdate() in case of large state updates. let's move it here, might
             // be useful for debugging.
-            if (payloadSize > Transport.layer.GetMaxPacketSize())
+            if (payloadSize > NetworkManager.singleton.transport.GetMaxPacketSize())
             {
                 Debug.LogWarning("Large state update of " + payloadSize + " bytes for netId:" + netId + " from script:" + comp);
             }
@@ -555,7 +555,12 @@ namespace Mirror
             // component's deserialization
             try
             {
-                comp.OnDeserialize(new NetworkReader(bytes), initialState);
+                NetworkReader componentReader = new NetworkReader(bytes);
+                comp.OnDeserialize(componentReader, initialState);
+                if (componentReader.Position != componentReader.Length)
+                {
+                    Debug.LogWarning("OnDeserialize didn't read the full " + bytes.Length + " bytes for object:" + name + " component=" + comp.GetType() + " sceneId=" + m_SceneId + ". Make sure that OnSerialize and OnDeserialize write/read the same amount of data in all cases.");
+                }
             }
             catch (Exception e)
             {
